@@ -42,7 +42,7 @@ Contact: gato@felingeneering.com
 #define M_PI_2         1.57079632679489661923
 #endif
 
-namespace lin {
+namespace flin {
 
 template<typename T>
 inline T deg2rad(T ang) {

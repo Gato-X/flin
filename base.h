@@ -38,6 +38,7 @@ template<typename T> class Matrix2D;
 template<typename T> class Matrix3D;
 template<typename T> class Matrix3H;
 template<typename T> class Quaternion;
+template<typename T> class LookAtSetup;
 
 template<class T> struct Size2D;
 
@@ -1608,7 +1609,7 @@ public:
 
 	Matrix3H<T> &toPerspectiveProjection(T h_fov, const Size2D<T> &vp_size, T near, T far = FLT_MAX, const Vector2D<T> &view_center_offset = Vector2D<T>(0,0), T pixel_aspect = 1.0);
 
-	Matrix3H<T> &toLookAt(const Vector3D<T> &position, const Vector3D<T> &target, const Vector3D<T> up);
+	Matrix3H<T> &toLookAt(const Vector3D<T> &position, const Vector3D<T> &target, const LookAtSetup<T> &las);
 
 	Vector4D<T> getColumn(int i) const {
 		return Vector4D<T>(a[i], a[i+4], a[i+8], a[i+12]);
@@ -2685,8 +2686,37 @@ Matrix3H<T> &Matrix3H<T>::toPerspectiveProjection(T h_fov, const Size2D<T> &vp_s
 }
 
 template<typename T>
-Matrix3H<T> &Matrix3H<T>::toLookAt(const Vector3D<T> &position, const Vector3D<T> &target, Vector3D<T> up) {
-	const T thd = 0.1;
+struct LookAtSetup {
+	// use setThresholdAngle to set these up
+	float thd;
+	float t_fac;
+
+	Vector3D<T> world_up; // must always be normalized
+	Vector3D<T> world_front;
+
+	LookAtSetup(float angle = 0.08):world_up(0,1,0),world_front(0,0,1) { setThresholdAngle(angle); } // ~ 5 degrees
+
+	void setThresholdAngle(float angle){ // in radians
+		thd = sin(angle);
+		float d = thd / sin(3.0*M_PI / 4.0 - angle);
+		t_fac = 1 - d/sqrt(2);
+	}
+
+	void setFront(const Vector3D<T> &vec) {
+		world_front = vec;
+		world_front.normalize();
+	}
+
+	void setUp(const Vector3D<T> &vec) {
+		world_up = vec;
+		world_up.normalize();
+	}
+};
+
+
+
+template<typename T>
+Matrix3H<T> &Matrix3H<T>::toLookAt(const Vector3D<T> &position, const Vector3D<T> &target, const LookAtSetup<T> &las) {
 	setToZero();
 
 
@@ -2694,26 +2724,26 @@ Matrix3H<T> &Matrix3H<T>::toLookAt(const Vector3D<T> &position, const Vector3D<T
 
 	cam_in.normalize();
 
-	Vector3D<T> cam_right(cam_in.cross(up)); // s
+	Vector3D<T> cam_right(cam_in.cross(las.world_up)); // s
 
 	float r_mag = cam_right.magnitude();
 
 	// the following is to avoid the singularity when parallel to up
 
-	if (r_mag < thd) {
-		float t =  (r_mag / thd);
+	if (r_mag < las.thd) {
+		float t =  (r_mag / las.thd);
 
-		t = (1-0.9)*t + 0.9; //L(1, 0.9, t);
+		t = (1-las.t_fac)*t + las.t_fac;
 
-		Vector3Df new_up(w_up * t + w_front * (1-t));
+		Vector3D<T> new_up(las.world_up * t + las.world_front * (1-t));
 		new_up.normalize();
 
 		cam_right = cam_in.cross(new_up);
 
 		r_mag = cam_right.magnitude();
 		
-		if (r_mag < (thd/10)) {
-			cam_right = cam_in.cross(w_front);
+		if (r_mag < (las.thd/10) && (r_mag < 0.01)) {
+			cam_right = cam_in.cross(las.world_front);
 			r_mag = cam_right.magnitude();
 		}
 	}

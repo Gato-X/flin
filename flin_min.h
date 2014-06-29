@@ -70,6 +70,8 @@ typedef Matrix2D<float_t> Matrix2Df;
 typedef Matrix3D<float_t> Matrix3Df;
 typedef Matrix3H<float_t> Matrix3Hf;
 
+typedef LookAtSetup<float_t> LookAtSetupf;
+
 typedef Size2D<float_t> Size2Df;
 typedef Size2D<int> Size2Di;
 

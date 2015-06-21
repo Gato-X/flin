@@ -26,8 +26,8 @@ Contact: gato@felingeneering.com
 
 */
 
-#ifndef __FLIN_GEOM_INC__
-#define __FLIN_GEOM_INC__
+#ifndef _FLIN_GEOM_H_
+#define _FLIN_GEOM_H_
 
 namespace flin {
 
@@ -338,4 +338,4 @@ struct Rect {
 
 } // namespace
 
-#endif /* __FLIN_GEOM_INC__ */
+#endif /* _FLIN_GEOM_H_ */

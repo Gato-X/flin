@@ -26,8 +26,8 @@ Contact: gato@felingeneering.com
 
 */
 
-#ifndef __FLIN_INC__
-#define __FLIN_INC__
+#ifndef _FLIN_H_
+#define _FLIN_H_
 
 #include "flin_min.h"
 
@@ -35,6 +35,6 @@ Contact: gato@felingeneering.com
 #include "plane.h"
 #include "frustum.h"
 
-#endif// __FLIN_INC__
+#endif// _FLIN_H_
 
 

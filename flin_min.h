@@ -26,8 +26,8 @@ Contact: gato@felingeneering.com
 
 */
 
-#ifndef __FLIN_MIN_INC__
-#define __FLIN_MIN_INC__
+#ifndef _FLIN_MIN_H_
+#define _FLIN_MIN_H_
 
 #include <cmath>
 #include <cfloat>
@@ -82,4 +82,4 @@ typedef AABounds<float_t> AABoundsf;
 typedef AABounds<int> AABoundsi;
 }
 
-#endif // __FLIN_MIN_INC__
+#endif // _FLIN_MIN_H_

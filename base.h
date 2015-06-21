@@ -26,8 +26,8 @@ Contact: gato@felingeneering.com
 
 */
 
-#ifndef __FLIN_BASE_INC__
-#define __FLIN_BASE_INC__
+#ifndef _FLIN_BASE_H_
+#define _FLIN_BASE_H_
 
 namespace flin {
 
@@ -2773,4 +2773,4 @@ Matrix3H<T> &Matrix3H<T>::toLookAt(const Vector3D<T> &position, const Vector3D<T
 
 } // namespace
 
-#endif // __FLIN_BASE_INC__
+#endif // _FLIN_BASE_H_

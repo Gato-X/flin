@@ -26,8 +26,8 @@ Contact: gato@felingeneering.com
 
 */
 
-#ifndef __FLIN_FLOATTYPES_INC__
-#define __FLIN_FLOATTYPES_INC__
+#ifndef _FLIN_FLOATTYPES_H_
+#define _FLIN_FLOATTYPES_H_
 
 #include <float.h>
 
@@ -95,4 +95,4 @@ class FloatTypes<long double> {
 
 }
 
-#endif // __FLIN_FLOATTYPES_INC__
+#endif // _FLIN_FLOATTYPES_H_

@@ -26,8 +26,8 @@ Contact: gato@felingeneering.com
 
 */
 
-#ifndef __FLIN_PLANE_INC__
-#define __FLIN_PLANE_INC__
+#ifndef _FLIN_PLANE_H_
+#define _FLIN_PLANE_H_
 
 #include "flin_min.h"
 
@@ -70,4 +70,4 @@ class Plane{
 
 } // namespace
 
-#endif // __FLIN_PLANE_INC__
+#endif // _FLIN_PLANE_H_

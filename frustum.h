@@ -26,8 +26,8 @@ Contact: gato@felingeneering.com
 
 */
 
-#ifndef __FLIN_FRUSTUM_INC__
-#define __FLIN_FRUSTUM_INC__
+#ifndef _FLIN_FRUSTUM_H_
+#define _FLIN_FRUSTUM_H_
 
 #include "flin_min.h"
 #include "plane.h"
@@ -66,4 +66,4 @@ class Frustum {
 
 } // namespace
 
-#endif // __FLIN_FRUSTUM_INC__
+#endif // _FLIN_FRUSTUM_H_

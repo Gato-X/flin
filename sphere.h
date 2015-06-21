@@ -26,8 +26,8 @@ Contact: gato@felingeneering.com
 
 */
 
-#ifndef __FLIN_SPHERE_INC__
-#define __FLIN_SPHERE_INC__
+#ifndef _FLIN_SPHERE_H_
+#define _FLIN_SPHERE_H_
 
 #include "flin_min.h"
 
@@ -61,4 +61,4 @@ struct Sphere{
 
 }
 
-#endif // __FLIN_SPHERE_INC__
+#endif // _FLIN_SPHERE_H_

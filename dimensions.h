@@ -33,9 +33,9 @@ namespace flin {
 
 template<class T>
 struct Size2D {
-	T w, h;
-	Size2D() {}
-	Size2D(T w_, T h_):w(w_),h(h_) {}
+    T w, h;
+    Size2D() {}
+    Size2D(T w_, T h_):w(w_),h(h_) {}
     template<class T2>
     Size2D(const Size2D<T2> &s):w(s.w),h(s.h){}
 };
@@ -44,6 +44,12 @@ template<class T>
 struct AABounds {
     Vector3D<T> min;
     Vector3D<T> max;
+
+    static constexpr AABounds empty()  {
+        return AABounds(0,0,0,-1,-1,-1);
+    }
+
+    AABounds() {}
 
     AABounds(T x1, T y1, T z1, T x2, T y2, T z2):
         min(x1,y1,z1),max(x2,y2,z2){}
@@ -92,9 +98,9 @@ struct AABounds {
     }
 
     bool contains(const Vector3D<T> &p) const {
-        return (p.comp.x >= min.comp.x) && (p.x <= max.comp.x) &&
-               (p.comp.y >= min.comp.y) && (p.y <= max.comp.y) &&
-               (p.comp.z >= min.comp.z) && (p.z <= max.comp.z);
+        return (p.comp.x >= min.comp.x) && (p.comp.x <= max.comp.x) &&
+               (p.comp.y >= min.comp.y) && (p.comp.y <= max.comp.y) &&
+               (p.comp.z >= min.comp.z) && (p.comp.z <= max.comp.z);
     }
 
     AABounds<T> operator +(const AABounds<T> &b) const {
@@ -163,6 +169,20 @@ struct AABounds {
 
     void length(T l) {
         max.comp.z = min.comp.z + l;
+    }
+
+    void grow(const Vector3D<T> &v) {
+        T dx = v.comp.x * 0.5;
+        T dy = v.comp.y * 0.5;
+        T dz = v.comp.z * 0.5;
+
+        min.comp.x -= dx;
+        min.comp.y -= dy;
+        min.comp.z -= dz;
+
+        max.comp.x += dx;
+        max.comp.y += dy;
+        max.comp.z += dz;
     }
 
     T area() const {
@@ -254,8 +274,8 @@ struct Rect {
 
 
     bool contains(const Vector2D<T> &p) const {
-        return (p.comp.x >= min.comp.x) && (p.x <= max.comp.x) &&
-               (p.comp.y >= min.comp.y) && (p.y <= max.comp.y);
+        return (p.comp.x >= min.comp.x) && (p.comp.x <= max.comp.x) &&
+               (p.comp.y >= min.comp.y) && (p.comp.y <= max.comp.y);
     }
 
     Rect<T> operator +(const Rect<T> &r) const {
@@ -314,6 +334,17 @@ struct Rect {
 
     void height(T h) {
         max.comp.y = min.comp.y + h;
+    }
+
+    void grow(const Vector2D<T> &v) {
+        T dx = v.comp.x * 0.5;
+        T dy = v.comp.y * 0.5;
+
+        min.comp.x -= dx;
+        min.comp.y -= dy;
+
+        max.comp.x += dx;
+        max.comp.y += dy;
     }
 
     T area() const {

@@ -1899,6 +1899,12 @@ public:
 		return comp.x*v.comp.y-comp.y*v.comp.x;
 	}
 
+	// robust angle between two vectors
+	template <typename T2>
+	T angle(const Vector2D<T2> &v) const {
+		return atan2(comp.x*v.comp.y-comp.y*v.comp.x, comp.x*v.comp.x+comp.y*v.comp.y);
+	}
+
 	template <typename T2>
 	Vector2D<T> min(const Vector2D<T2> &v) const {
 		Vector2D<T> tmp(
@@ -2232,6 +2238,11 @@ public:
 		tmp.comp.y= comp.z*v.comp.x-comp.x*v.comp.z;
 		tmp.comp.z= comp.x*v.comp.y-comp.y*v.comp.x;
 		return tmp;
+	}
+
+	template <typename T2>
+	T angle(const Vector3D<T2> &v) const {
+		return atan2((this->cross(v)).length(), this->dot(v));
 	}
 
 	template <typename T2>

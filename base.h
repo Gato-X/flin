@@ -2242,7 +2242,7 @@ public:
 
 	template <typename T2>
 	T angle(const Vector3D<T2> &v) const {
-		return atan2((this->cross(v)).length(), this->dot(v));
+		return atan2((this->cross(v)).magnitude(), this->dot(v));
 	}
 
 	template <typename T2>

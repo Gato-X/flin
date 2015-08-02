@@ -50,6 +50,8 @@ template<typename T> inline T rad2deg(T rad) {
 	return rad * 0.017453293;
 }
 
+template <typename T> inline void swap(T &a, T &b) {T c=a; a=b; b=c; }
+
 template<typename T>
 class Quaternion {
 public:
@@ -67,15 +69,11 @@ public:
 			a[i] = from.a[i];
 	}
 
-	Quaternion<T> (T w, T x, T y, T z) {
-		a[0]=w;
-		a[1]=x;
-		a[2]=y;
-		a[3]=z;
+	constexpr Quaternion<T> (T w, T x, T y, T z):a{w,x,y,z} {
 	}
 
 
-	static Quaternion<T> Identity() {
+	static constexpr Quaternion<T> Identity() {
 		return Quaternion<T>(1,0,0,0);
 	}
 
@@ -97,34 +95,38 @@ public:
 
 	template <typename T2>
 	Quaternion<T> &operator = (const Matrix3D<T2> &m) {
-        T tr = m.trace();
+        T t = m.trace();
         T s;
 
-		if (tr > 0) {
-			s = 0.5 / sqrt(tr);
-			comp.w = 0.25 / s;
-			comp.x = (m.a[7] - m.a[5]) * s;
-			comp.y = (m.a[2] - m.a[6]) * s;
-			comp.z = (m.a[3] - m.a[1]) * s;
+		if (t > 0) {
+			s = sqrt(t + 1.0);  // 2w
+			comp.w = 0.5 * s;
+			s = 0.5/s;  // 1/(4w)
+			comp.x = (m.a[7]-m.a[5])*s;
+			comp.y = (m.a[2]-m.a[6])*s;
+			comp.z = (m.a[3]-m.a[1])*s;
 		} else {
 			if (m.a[0] > m.a[4] && m.a[0] > m.a[8]) {
-				s = sqrt(m.a[0] - m.a[4] - m.a[8])*2;
-				comp.x = 0.5 / s;
+				t = m.a[0] - m.a[4] - m.a[8] + 1.0;
+				s = sqrt(t) * 0.5;
+				comp.x = s*t;
 				comp.y = (m.a[1] + m.a[3]) * s;
 				comp.z = (m.a[2] + m.a[6]) * s;
-				comp.w = (m.a[5] + m.a[7]) * s;
+				comp.w = (m.a[5] - m.a[7]) * s;
 			} else if (m.a[4] > m.a[0] && m.a[4] > m.a[8]) {
-				s = sqrt(m.a[4] - m.a[0] - m.a[8])*2;
+				t = m.a[4] - m.a[0] - m.a[8] + 1.0;
+				s = sqrt(t) * 0.5;
 				comp.x = (m.a[1] + m.a[3]) * s;
-				comp.y = 0.5 / s;
+				comp.y = s*t;
 				comp.z = (m.a[5] + m.a[7]) * s;
-				comp.w = (m.a[2] + m.a[6]) * s;
+				comp.w = (m.a[6] - m.a[2]) * s;
 			} else if (m.a[8] > m.a[0] && m.a[8] > m.a[4]) {
-				s = sqrt(m.a[8] - m.a[0] - m.a[4])*2;
+				t =m.a[8] - m.a[0] - m.a[4] + 1.0;
+				s = sqrt(t) * 0.5;
 				comp.x = (m.a[2] + m.a[6]) * s;
 				comp.y = (m.a[5] + m.a[7]) * s;
-				comp.z = 0.5 / s;
-				comp.w = (m.a[1] + m.a[3]) * s;
+				comp.z = s*t;
+				comp.w = (m.a[1] - m.a[3]) * s;
 			}
 		}
 	}
@@ -453,23 +455,15 @@ public:
         a[3] = m.a[3];
     }
 
-    Matrix2D<T>(T a_, T b_, T c_, T d_) {
-        a[0] = a_;
-        a[1] = b_;
-        a[2] = c_;
-        a[3] = d_;
+	constexpr Matrix2D<T>(T a_, T b_, T c_, T d_):a{a_,b_,c_,d_} {
+	}
+
+    static constexpr Matrix2D<T> Zero() {
+        return Matrix2D<T>(0,0,0,0);
     }
 
-    static Matrix2D<T> Zero() {
-        Matrix2D<T> mtx;
-        mtx.setToZero();
-        return mtx;
-    }
-
-    static Matrix2D<T> Identity() {
-        Matrix2D<T> mtx;
-        mtx.setToIdentity();
-        return mtx;
+    static constexpr Matrix2D<T> Identity() {
+        return Matrix2D<T>(1,0,0,1);
     }
 
     template <typename Numeric>
@@ -479,7 +473,7 @@ public:
     }
 
     template <typename T2>
-    Matrix2D<T> &operator =  (const Matrix2D<T2> &m) {
+    Matrix2D<T> &operator = (const Matrix2D<T2> &m) {
         a[0] = m.a[0];
         a[1] = m.a[1];
         a[2] = m.a[2];
@@ -489,7 +483,7 @@ public:
     }
 
     template <typename T2>
-    Matrix2D<T> operator  *  (const Matrix2D<T2> &m) const {
+    Matrix2D<T> operator * (const Matrix2D<T2> &m) const {
         Matrix2D<T> tmp;
 
         tmp.a[0] = a[0] * m.a[0] + a[1] * m.a[2];
@@ -514,7 +508,7 @@ public:
         a[2] = tmp.a[2];
         a[3] = tmp.a[3];
 
-        return &this;
+        return *this;
     }
 
 
@@ -621,18 +615,22 @@ public:
     Matrix2D<T> getInverse() const { // gets the inverse of a matrix (doesn't overtwirte the current matrix)
         Matrix2D<T> mat;
         T d = a[0] * a[3] - a[1] * a[2];
+	
+	    if (FloatTypes<T>::z(d)) return Matrix2D<T>::Zero();
 
-        mat.a[0] = a[3] / d;
-        mat.a[1] =-a[1] / d;
-        mat.a[2] =-a[2] / d;
-        mat.a[3] = a[0] / d;
+		d = 1.0/d;
+
+        mat.a[0] = a[3] * d;
+        mat.a[1] =-a[1] * d;
+        mat.a[2] =-a[2] * d;
+        mat.a[3] = a[0] * d;
 
         return mat;
     }
 
     Matrix2D<T> &transpose() {
         T t;
-        SWAP(a[1],a[2]);
+        swap(a[1],a[2]);
         return *this;
     }
 
@@ -733,6 +731,10 @@ public:
 		for (int i = 0; i < 9; i++) a[i] = m.a[i];
 	}
 
+	constexpr Matrix3D<T>(T a0, T a1, T a2, T a3, T a4, T a5, T a6, T a7, T a8)
+		:a{a0,a1,a2,a3,a4,a5,a6,a7,a8} {
+	}
+
 	explicit Matrix3D<T>(const Matrix3H<T> &m) {
 		int i,j,k,l;
 		k=0;
@@ -751,6 +753,32 @@ public:
 
 	template <typename T2>
 	explicit Matrix3D<T>(const Quaternion<T2> &quat) {
+		*this = quat;
+	}
+
+	static constexpr Matrix3D<T> Zero() {
+		return Matrix3D<T>(0,0,0,0,0,0,0,0,0);
+	}
+
+	static constexpr Matrix3D<T> Identity() {
+		return  Matrix3D<T>(1,0,0,0,1,0,0,0,1);
+	}
+
+	template <typename Numeric>
+	Matrix3D<T> &operator = (Numeric n) {
+		setToZero();
+		a[0]=a[4]=a[8]=n;
+	}
+
+	template <typename T2>
+	Matrix3D<T> &operator = (const Matrix3D<T2> &m) {
+		for (int i = 0; i < 9; i++) a[i] = m.a[i];
+
+		return *this;
+	}
+
+	template <typename T2>
+	Matrix3D<T> &operator = (const Quaternion<T2> &quat) {
 		T x2      = quat.comp.x + quat.comp.x;
 		T y2      = quat.comp.y + quat.comp.y;
 		T z2	  = quat.comp.z + quat.comp.z;
@@ -775,32 +803,28 @@ public:
 		a[6]  =     ( xz - yw );//-
 		a[7]  =     ( yz + xw );//+
 		a[8]  = 1 - ( xx + yy );//+
-	}
-
-	static Matrix3D<T> Zero() {
-		Matrix3D<T> mtx;
-		mtx.setToZero();
-		return mtx;
-	}
-
-	static Matrix3D<T> Identity() {
-		Matrix3D<T> mtx;
-		mtx.setToIdentity();
-		return mtx;
-	}
-
-	template <typename Numeric>
-	Matrix3D<T> &operator = (Numeric n) {
-		setToZero();
-		a[0]=a[4]=a[8]=n;
-	}
-
-	template <typename T2>
-	Matrix3D<T> &operator =  (const Matrix3D<T2> &m) {
-		for (int i = 0; i < 9; i++) a[i] = m.a[i];
 
 		return *this;
 	}
+
+	template <typename T2> // extract the 3x3 upper-right submatrix from m
+	Matrix3D<T> &operator << (const Matrix3H<T2> &m) {
+		int i,j,k,l;
+		k=0;
+		l=0;
+
+		for (i = 0; i < 3; i++) {
+			for (j = 0; j < 3; j++) {
+				a[k]=m.a[l];
+				k++;
+				l++;
+			}
+			l++;
+		}
+		return *this;
+	}
+
+
 
 	template <typename T2>
 	Matrix3D<T> operator  *  (const Matrix3D<T2> &m) const {
@@ -858,8 +882,17 @@ public:
         }
 
         for (i = 0; i < 9; i++) a[i] = tmp.a[i];
-        return &this;
+        return *this;
     }
+
+    template <typename T2>
+    Matrix3D<T> &operator  +=  (const Matrix3D<T2> &m) {
+		for (int i = 0; i < 9; i++) {
+			a[i] += m.a[i];
+		}
+        return *this;
+    }
+
 
 
 	template <typename T2>
@@ -949,9 +982,9 @@ public:
 	}
 
 	T det() const {
-		return  a[0] * ( a[4]*a[8] - a[7]*a[5] )
-		        - a[1] * ( a[3]*a[8] - a[6]*a[5] )
-		        + a[2] * ( a[3]*a[7] - a[6]*a[4] );
+		return a[0] * ( a[4]*a[8] - a[7]*a[5] )
+		     - a[1] * ( a[3]*a[8] - a[6]*a[5] )
+		     + a[2] * ( a[3]*a[7] - a[6]*a[4] );
 	}
 
 
@@ -977,29 +1010,31 @@ public:
 		Matrix3D<T> mat;
 
 	    if (FloatTypes<T>::z(d)) {
-	        return mat.setToIdentity();
+	        return Matrix3D<T>::Zero();
 		}
 
-		mat.a[0] =    a[4]*a[8] - a[5]*a[7]   / d;
-		mat.a[1] = -( a[1]*a[8] - a[7]*a[2] ) / d;
-		mat.a[2] =    a[1]*a[5] - a[4]*a[2]   / d;
+		d = 1.0/d;
 
-		mat.a[3] = -( a[3]*a[8] - a[5]*a[6] ) / d;
-		mat.a[4] =    a[0]*a[8] - a[6]*a[2]   / d;
-		mat.a[5] = -( a[0]*a[5] - a[3]*a[2] ) / d;
+		mat.a[0] =  ( a[4]*a[8] - a[5]*a[7] ) * d;
+		mat.a[1] = -( a[1]*a[8] - a[7]*a[2] ) * d;
+		mat.a[2] =  ( a[1]*a[5] - a[4]*a[2] ) * d;
 
-		mat.a[6] =    a[3]*a[7] - a[6]*a[4]   / d;
-		mat.a[7] = -( a[0]*a[7] - a[6]*a[1] ) / d;
-		mat.a[8] =    a[0]*a[4] - a[1]*a[3]   / d;
+		mat.a[3] = -( a[3]*a[8] - a[5]*a[6] ) * d;
+		mat.a[4] =  ( a[0]*a[8] - a[6]*a[2] ) * d;
+		mat.a[5] = -( a[0]*a[5] - a[3]*a[2] ) * d;
+
+		mat.a[6] =  ( a[3]*a[7] - a[6]*a[4] ) * d;
+		mat.a[7] = -( a[0]*a[7] - a[6]*a[1] ) * d;
+		mat.a[8] =  ( a[0]*a[4] - a[1]*a[3] ) * d;
 
 		return mat;
 	}
 
 	Matrix3D<T> &transpose() {
         T t;
-		SWAP(a[1],a[3]);
-		SWAP(a[2],a[6]);
-		SWAP(a[5],a[7]);
+		swap(a[1],a[3]);
+		swap(a[2],a[6]);
+		swap(a[5],a[7]);
 		return *this;
 	}
 
@@ -1103,7 +1138,7 @@ public:
 
 	void setRow(int i, const Vector3D<T> &v) {
 		int idx = i * 3;
-		a[idx] = v.comp.x;
+		a[idx] = v.comp.x;v;
 		a[idx+1] = v.comp.y;
 		a[idx+2] = v.comp.z;
 	}
@@ -1126,13 +1161,108 @@ public:
 	const T* ptr() const {
 	    return a;
 	}
+
+	// axis MUST be normalized
+	template <typename T2>
+	void fromAxisAngle(const Vector3D<T2> &axis, T ang) {
+		T s = sin(axis.comp.angle);
+		T c = cos(axis.comp.angle);
+		T t = 1.0 - c;
+
+		a[0] = c + axis.comp.x*axis.comp.x*t;
+		a[4] = c + axis.comp.y*axis.comp.y*t;
+		a[8] = c + axis.comp.z*axis.comp.z*t;
+
+		T tmp1 = axis.comp.x*axis.comp.y*t;
+		T tmp2 = axis.comp.z*s;
+		a[3] = tmp1 + tmp2;
+		a[1] = tmp1 - tmp2;
+		tmp1 = axis.comp.x*axis.comp.z*t;
+		tmp2 = axis.comp.y*s;
+		a[6] = tmp1 - tmp2;
+		a[2] = tmp1 + tmp2;
+		tmp1 = axis.comp.y*axis.comp.z*t;
+		tmp2 = axis.comp.x*s;
+		a[7] = tmp1 + tmp2;
+		a[5] = tmp1 - tmp2;
+	}
+
+
+	// modified Gramm-Schmidt orthonormalize
+	void orthonormalize() {
+		for (int i = 0; i < 9; i+=3) {
+			T n = sqrt(a[i]*a[i] + a[i+1]*a[i+1] + a[i+2]*a[i+2]);
+
+			if (n > 0) {
+				n = 1.0/n;
+
+				a[i] *= n;
+				a[i+1] *= n;
+				a[i+2] *= n;
+			
+				for (int j = i+3; j < 9; j+=3) {
+					T d = a[j]*a[i] + a[j+1]*a[i+1] + a[j+2]*a[i+2];
+					a[j]   -= a[i] * d;
+					a[j+1] -= a[i+1] * d;
+					a[j+2] -= a[i+2] * d;
+				}
+			}
+		}
+	}
+
+	T distanceSq(const Matrix3D<T> &other) {
+		T sum = 0;
+		for (int i =0; i < 9; i++) {
+			T dif = a[i] - other.a[i];
+			sum += dif*dif;
+		}
+		return sum;
+	}
+
+	T frobenius() {
+		T sum = 0;
+		for (int i =0; i < 9; i++) {
+			sum += a[i]*a[i];
+		}
+		return sqrt(sum);
+	}
+
+
+	// decomposes this so into a rotation r and scaling s: this = r s
+	void decomposeRS(Matrix3D<T> &r, Matrix3D<T> &s) {
+		Matrix3D<T> m(*this);
+
+		if (m.det() < 0) {
+			m[0] = -m[0];
+			m[1] = -m[1];
+			m[2] = -m[2];
+		}
+		int i;
+
+		// perform polar decomposition on m
+		for (i = 0; i < 50; i++) {
+			Matrix3D<T> n(m.getInverse());
+			n.transpose();
+			m += n;
+			m.scale(0.5);
+			if (m.det() == 1.0) break;
+		}
+
+		m.orthonormalize(); // m is a rotation-only matrix (ie det(m) = 1 and m x m^-1 = I)
+
+		r = m;
+
+		m = r.getInverse();
+
+		s = m * (*this); // scale is "this" without the rotation part
+	}
 };
 
 template<typename T>
 std::ostream& operator <<(std::ostream &f, const Matrix3D<T> &m) {
 	return f << "{{" << m.elem(0) << ',' << m.elem(1) << ',' << m.elem(2)  << "}," << \
 	       "{" << m.elem(3) << ',' << m.elem(4) << ',' << m.elem(5)  << "}," << \
-	       "{" << m.elem(6) << ',' << m.elem(7) << ',' << m.elem(8)  << "}}" << std::endl;
+	       "{" << m.elem(6) << ',' << m.elem(7) << ',' << m.elem(8)  << "}}";
 }
 
 template<typename T>
@@ -1143,6 +1273,10 @@ public:
 
 	Matrix3H<T>(const Matrix3H<T> &m) {
 		for (int i = 0; i < 16; i++) a[i] = m.a[i];
+	}
+
+	constexpr Matrix3H<T>(T a0, T a1, T a2, T a3, T a4, T a5, T a6, T a7, T a8, T a9, T a10, T a11, T a12, T a13, T a14, T a15):
+		a{a0,a1,a2,a3,a4,a5,a6,a7,a8,a9,a10,a11,a12,a13,a14,a15} {
 	}
 
 	explicit Matrix3H<T>(const Matrix3D<T> &m) {
@@ -1182,15 +1316,11 @@ public:
 	}
 
 	static Matrix3H<T> Zero() {
-		Matrix3H<T> mtx;
-		mtx.setToZero();
-		return mtx;
+		return Matrix3H<T>(0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0);
 	}
 
 	static Matrix3H<T> Identity() {
-		Matrix3H<T> mtx;
-		mtx.setToIdentity();
-		return mtx;
+		return Matrix3H<T>(1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1);
 	}
 
 
@@ -1210,6 +1340,14 @@ public:
 			l++;
 		}
 
+		return *this;
+	}
+
+	template <typename T2>
+	Matrix3H<T> &operator = (const Matrix3D<T2> &m) {
+		a[12]=a[13]=a[14]=0;
+		a[15]=1;
+		(*this) << m;
 		return *this;
 	}
 
@@ -1287,6 +1425,14 @@ public:
         return *this;
     }
 
+
+    template <typename T2>
+    Matrix3H<T> &operator  +=  (const Matrix3H<T2> &m) {
+		for (int i = 0; i < 16; i++) {
+			a[i] += m.a[i];
+		}
+        return *this;
+    }
 
 
 	template <typename T2>
@@ -1457,8 +1603,8 @@ public:
 
 		det = a[0]*cof[0] + a[1]*cof[4] + a[2]*cof[8] + a[3]*cof[12];
 
-		if (det == 0)
-			return Matrix3H<T>().zero();
+		if (FloatTypes<T>::z(det))
+			return Matrix3H<T>::Zero();
 
 		det = 1.0 / det;
 
@@ -1472,12 +1618,12 @@ public:
 
 	Matrix3H<T> &transpose() {
         T t;
-		SWAP(a[1],a[4]);
-		SWAP(a[2],a[8]);
-		SWAP(a[6],a[9]);
-		SWAP(a[3],a[12]);
-		SWAP(a[7],a[13]);
-		SWAP(a[11],a[14]);
+		swap(a[1],a[4]);
+		swap(a[2],a[8]);
+		swap(a[6],a[9]);
+		swap(a[3],a[12]);
+		swap(a[7],a[13]);
+		swap(a[11],a[14]);
 		return *this;
 	}
 
@@ -1673,13 +1819,12 @@ public:
 
 };
 
-
 template<typename T>
 std::ostream& operator <<(std::ostream &f, const Matrix3H<T> &m) {
-	return f << "|" << m.elem(0) << ',' << m.elem(1) << ',' << m.elem(2) << ',' << m.elem(3) << '|' << std::endl << \
-	       "|" << m.elem(4) << ',' << m.elem(5) << ',' << m.elem(6) << ',' << m.elem(7) << '|' << std::endl << \
-	       "|" << m.elem(8) << ',' << m.elem(9) << ',' << m.elem(10)<< ',' << m.elem(11)<< '|' << std::endl << \
-	       "|" << m.elem(12)<< ',' << m.elem(13)<< ',' << m.elem(14)<< ',' << m.elem(15)<< '|' << std::endl;
+	return f << "{{" << m.elem(0) << ',' << m.elem(1) << ',' << m.elem(2) << ',' << m.elem(3)  << "}," << \
+	       "{" << m.elem(4) << ',' << m.elem(5) << ',' << m.elem(6) << ',' << m.elem(7) << "}," << \
+	       "{" << m.elem(8) << ',' << m.elem(9) << ',' << m.elem(10) << ',' << m.elem(11) << "}," << \
+	       "{" << m.elem(12) << ',' << m.elem(13) << ',' << m.elem(14) << ',' << m.elem(15) << "}}";
 }
 
 
@@ -1693,23 +1838,21 @@ public:
 		} comp;
 	};
 
-	static Vector2D<T> I() {
+	static constexpr Vector2D<T> I() {
 		return Vector2D<T>(1,0);
 	}
 
-	static Vector2D<T> J() {
+	static constexpr Vector2D<T> J() {
 		return Vector2D<T>(0,1);
 	}
 
-	static Vector2D<T> Zero() {
+	static constexpr Vector2D<T> Zero() {
 		return Vector2D<T>(0,0);
 	}
 
 	Vector2D<T> () {};
 
-	Vector2D<T> (T px, T py) {
-		comp.x = px;
-		comp.y = py;
+	constexpr Vector2D<T> (T px, T py):a{px,py} {
 	}
 
 	Vector2D<T> (const Vector2D<T> &from) {
@@ -1986,29 +2129,26 @@ public:
 		} comp;
 	};
 
-	static Vector3D<T> I() {
+	static constexpr Vector3D<T> I() {
 		return Vector3D<T>(1,0,0);
 	}
 
-	static Vector3D<T> J() {
+	static constexpr Vector3D<T> J() {
 		return Vector3D<T>(0,1,0);
 	}
 
-	static Vector3D<T> K() {
+	static constexpr Vector3D<T> K() {
 		return Vector3D<T>(0,0,1);
 	}
 
-	static Vector3D<T> Zero() {
+	static constexpr Vector3D<T> Zero() {
 		return Vector3D<T>(0,0,0);
 	}
 
 
 	Vector3D<T> () {};
 
-	Vector3D<T> (T px, T py, T pz) {
-		comp.x = px;
-		comp.y = py;
-		comp.z = pz;
+	constexpr Vector3D<T> (T px, T py, T pz):a{px,py,pz} {
 	}
 
 	Vector3D<T> (const Vector3D<T> &from) {
@@ -2362,33 +2502,29 @@ public:
 		} comp;
 	};
 
-	static Vector4D<T> I() {
+	static constexpr Vector4D<T> I() {
 		return Vector4D<T>(1,0,0,0);
 	}
 
-	static Vector4D<T> J() {
+	static constexpr Vector4D<T> J() {
 		return Vector4D<T>(0,1,0,0);
 	}
 
-	static Vector4D<T> K() {
+	static constexpr Vector4D<T> K() {
 		return Vector4D<T>(0,0,1,0);
 	}
 
-	static Vector4D<T> W() {
+	static constexpr Vector4D<T> W() {
 		return Vector4D<T>(0,0,0,1);
 	}
 
-	static Vector4D<T> Zero() {
+	static constexpr Vector4D<T> Zero() {
 		return Vector4D<T>(0,0,0,0);
 	}
 
 	Vector4D<T> () {};
 
-	Vector4D<T> (T px, T py, T pz, T pw) {
-		comp.x = px;
-		comp.y = py;
-		comp.z = pz;
-		comp.w = pw;
+	Vector4D<T> (T px, T py, T pz, T pw):a{px,py,pz,pw} {
 	}
 
 	Vector4D<T> (const Vector4D<T> &from) {

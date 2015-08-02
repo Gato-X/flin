@@ -1343,6 +1343,24 @@ public:
 		return *this;
 	}
 
+	template <typename T2> // copy translation part
+	Matrix3H<T> &operator << (const Vector3D<T2> &v) {
+		a[3] = v.a[0];
+		a[7] = v.a[1];
+		a[11] = v.a[2];
+		return *this;
+	}
+
+
+	template <typename T2> // copy translation part
+	Matrix3H<T> &operator << (const Vector4D<T2> &v) {
+		a[3] = v.a[0];
+		a[7] = v.a[1];
+		a[11] = v.a[2];
+		a[15] = v.a[3];
+		return *this;
+	}
+
 	template <typename T2>
 	Matrix3H<T> &operator = (const Matrix3D<T2> &m) {
 		a[12]=a[13]=a[14]=0;
@@ -2213,6 +2231,15 @@ public:
 		return tmp;
 	}
 
+	
+	template <typename T2>
+	Vector3D<T> &operator << (const Matrix3H<T2> &m) {
+		a[0] = m.a[3];
+		a[1] = m.a[7];
+		a[2] = m.a[11];
+		return *this;
+	}
+
 	void flip() {
 	    comp.x = -comp.x;
 	    comp.y = -comp.y;
@@ -2596,6 +2623,16 @@ public:
 		tmp.comp.w = comp.w / scale;
 		return tmp;
 	}
+
+	template <typename T2>
+	Vector4D<T> &operator << (const Matrix3H<T2> &m) {
+		a[0] = m.a[3];
+		a[1] = m.a[7];
+		a[2] = m.a[11];
+		a[3] = m.a[15];
+		return *this;
+	}
+
 
 	void flip() {
 	    comp.x = -comp.x;
